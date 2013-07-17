@@ -1,0 +1,66 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:0.5.+'
+    }
+}
+apply plugin: 'android-library'
+apply plugin: 'maven'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+//    compile files('libs/android-support-v4.jar')
+    compile files('libs/volley.jar')
+    compile files('libs/commons-lang3-3.0.jar')
+//    compile 'org.apache.commons:commons-lang3:3.0'
+}
+
+version = '0.1-SNAPSHOT'
+
+android {
+    compileSdkVersion 17
+    buildToolsVersion "17.0.0"
+
+    defaultConfig {
+        minSdkVersion 8
+    }
+}
+
+mavenRepository = System.getProperty('user.home') + '/arcadia/maven-repo'
+mavenLocalRepository = System.getProperty('user.home') + '/.m2/repository'
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            repository(url: uri(mavenRepository + '/releases'))
+//            snapshotRepository(url: uri(mavenRepository + '/snapshots'))
+            repository(url: uri(mavenLocalRepository))
+            pom.groupId = 'com.makotokw.android'
+            pom.artifactId = 'android-youtube'
+            pom.project {
+                licenses {
+                    license {
+                        name 'The Apache Software License, Version 2.0'
+                        url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                        distribution 'repo'
+                    }
+                }
+                developers {
+                    developer {
+                        name 'Makoto Kawasaki'
+                        url 'http://makotokw.com'
+                        roles {
+                            role 'Developer'
+                            role 'Contributor'
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
