@@ -3,9 +3,11 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:0.5.+'
+        // workaround: 0.5 can't dex with compile files
+        classpath 'com.android.tools.build:gradle:0.4.+'
     }
 }
+
 apply plugin: 'android-library'
 apply plugin: 'maven'
 
@@ -14,12 +16,13 @@ repositories {
 }
 
 dependencies {
-//    compile files('libs/android-support-v4.jar')
     compile files('libs/volley.jar')
-    compile files('libs/commons-lang3-3.0.jar')
+// workaround: 0.4 can't execute tests application with repo dependency
 //    compile 'org.apache.commons:commons-lang3:3.0'
+    compile files('libs/commons-lang3-3.0.jar')
 }
 
+projectName = 'android-youtube'
 version = '0.1-SNAPSHOT'
 
 android {
@@ -31,13 +34,19 @@ android {
     }
 }
 
-mavenRepository = System.getProperty('user.home') + '/arcadia/maven-repo'
+task renamePackageReleaseJar(type : Copy, dependsOn : 'packageReleaseJar') {
+    from 'build/bundles/release/classes.jar'
+    into "build/libs"
+    rename { "${projectName}-${version}.jar" }
+}
+
+//mavenRepository = System.getProperty('user.home') + '/arcadia/maven-repo'
 mavenLocalRepository = System.getProperty('user.home') + '/.m2/repository'
 
 uploadArchives {
     repositories {
         mavenDeployer {
-            repository(url: uri(mavenRepository + '/releases'))
+//            repository(url: uri(mavenRepository + '/releases'))
 //            snapshotRepository(url: uri(mavenRepository + '/snapshots'))
             repository(url: uri(mavenLocalRepository))
             pom.groupId = 'com.makotokw.android'

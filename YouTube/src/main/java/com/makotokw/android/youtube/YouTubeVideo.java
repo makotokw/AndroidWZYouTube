@@ -1,6 +1,5 @@
 package com.makotokw.android.youtube;
 
-import android.text.Html;
 import android.util.Log;
 
 import com.android.volley.DefaultRetryPolicy;
@@ -9,13 +8,10 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 
-//import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-
-import java.util.regex.Pattern;
 
 public class YouTubeVideo {
 
