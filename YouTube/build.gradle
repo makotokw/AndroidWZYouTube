@@ -4,7 +4,7 @@ buildscript {
     }
     dependencies {
         // workaround: 0.5 can't dex with compile files
-        classpath 'com.android.tools.build:gradle:0.4.+'
+        classpath 'com.android.tools.build:gradle:0.5.+'
     }
 }
 
@@ -18,12 +18,12 @@ repositories {
 dependencies {
     compile files('libs/volley.jar')
 // workaround: 0.4 can't execute tests application with repo dependency
-//    compile 'org.apache.commons:commons-lang3:3.0'
-    compile files('libs/commons-lang3-3.0.jar')
+    compile 'org.apache.commons:commons-lang3:3.0'
+//    compile files('libs/commons-lang3-3.0.jar')
 }
 
-projectName = 'android-youtube'
-version = '0.1-SNAPSHOT'
+def projectName = 'android-wzyoutube'
+def projectVersion = '0.1-SNAPSHOT'
 
 android {
     compileSdkVersion 17
@@ -31,17 +31,18 @@ android {
 
     defaultConfig {
         minSdkVersion 8
+        targetSdkVersion 8
     }
 }
 
 task renamePackageReleaseJar(type : Copy, dependsOn : 'packageReleaseJar') {
     from 'build/bundles/release/classes.jar'
     into "build/libs"
-    rename { "${projectName}-${version}.jar" }
+    rename { "${projectName}-${projectVersion}.jar" }
 }
 
-//mavenRepository = System.getProperty('user.home') + '/arcadia/maven-repo'
-mavenLocalRepository = System.getProperty('user.home') + '/.m2/repository'
+//def mavenRepository = System.getProperty('user.home') + '/arcadia/maven-repo'
+def mavenLocalRepository = System.getProperty('user.home') + '/.m2/repository'
 
 uploadArchives {
     repositories {

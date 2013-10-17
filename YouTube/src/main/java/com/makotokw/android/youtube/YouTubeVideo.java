@@ -38,6 +38,10 @@ public class YouTubeVideo {
     private String mThumbnailUrl;
     private JSONObject mContentAttributes; // from watchUrl
 
+    public static String createWatchUrl(String videoId) {
+        return "http://www.youtube.com/watch?v=" + videoId;
+    }
+
     public String getVideoId() {
         return mVideoId;
     }
@@ -71,7 +75,7 @@ public class YouTubeVideo {
     }
 
     public String getWatchUrl() {
-        return "http://www.youtube.com/watch?v=" + mVideoId;
+        return YouTubeVideo.createWatchUrl(mVideoId);
     }
 
     public String getThumbnailUrl() {
@@ -84,12 +88,12 @@ public class YouTubeVideo {
 
     public String getMediaUrl(YouTubeVideoQuality quality) {
         String mediaUrl = null;
-        if (mContentAttributes.has("video")) {
-            JSONObject video = null;
+        if (mContentAttributes.has("player_data")) {
+            JSONObject playerData = null;
             try {
-                video = mContentAttributes.getJSONObject("video");
-                if (video.has("fmt_stream_map")) {
-                    JSONArray videos = video.getJSONArray("fmt_stream_map");
+                playerData = mContentAttributes.getJSONObject("player_data");
+                if (playerData.has("fmt_stream_map")) {
+                    JSONArray videos = playerData.getJSONArray("fmt_stream_map");
                     int mediaCount = videos.length();
                     if (mediaCount > 0) {
                         int index = 0;
