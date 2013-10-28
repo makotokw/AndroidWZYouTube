@@ -36,6 +36,8 @@ public class YouTubeVideo {
     private String mMediaDescription;
     private long mDuration;
     private String mThumbnailUrl;
+
+    private JSONArray mStreamMap;
     private JSONObject mContentAttributes; // from watchUrl
 
     public static String createWatchUrl(String videoId) {
@@ -86,31 +88,42 @@ public class YouTubeVideo {
         this.mThumbnailUrl = thumbnailUrl;
     }
 
+    protected JSONArray getStreamMap() {
+        return mStreamMap;
+    }
+
+    protected void setStreamMap(JSONArray streamMap) {
+        mStreamMap = streamMap;
+    }
+
+    protected JSONObject getContentAttributes() {
+        return mContentAttributes;
+    }
+
+    protected void setContentAttributes(JSONObject contentAttributes) {
+        mContentAttributes = contentAttributes;
+    }
+
     public String getMediaUrl(YouTubeVideoQuality quality) {
         String mediaUrl = null;
-        if (mContentAttributes.has("player_data")) {
-            JSONObject playerData = null;
-            try {
-                playerData = mContentAttributes.getJSONObject("player_data");
-                if (playerData.has("fmt_stream_map")) {
-                    JSONArray videos = playerData.getJSONArray("fmt_stream_map");
-                    int mediaCount = videos.length();
-                    if (mediaCount > 0) {
-                        int index = 0;
-                        if (quality == YouTubeVideoQuality.Medium) {
-                            index = Math.min(mediaCount - 1, 1);
-                        } else if (quality == YouTubeVideoQuality.Small) {
-                            index = mediaCount - 1;
-                        }
-                        JSONObject stream = videos.getJSONObject(index);
-                        if (stream != null) {
-                            mediaUrl = stream.getString("url");
-                        }
+        try {
+            if (mStreamMap != null) {
+                int mediaCount = mStreamMap.length();
+                if (mediaCount > 0) {
+                    int index = 0;
+                    if (quality == YouTubeVideoQuality.Medium) {
+                        index = Math.min(mediaCount - 1, 1);
+                    } else if (quality == YouTubeVideoQuality.Small) {
+                        index = mediaCount - 1;
+                    }
+                    JSONObject stream = mStreamMap.getJSONObject(index);
+                    if (stream != null) {
+                        mediaUrl = stream.getString("url");
                     }
                 }
-            } catch (JSONException e) {
-                e.printStackTrace();
             }
+        } catch (JSONException e) {
+            e.printStackTrace();
         }
         return mediaUrl;
     }
@@ -134,11 +147,9 @@ public class YouTubeVideo {
                     @Override
                     public void onResponse(String response) {
 
-//                        Log.d(TAG, "onResponse: " + response);
-
                         YouTubeError error = null;
                         try {
-                            processWatchUrlPage(response);
+                            YouTubeWatchPageParser.getInstance().parsePageWithData(response, YouTubeVideo.this);
                         } catch (YouTubeError youTubeError) {
                             error = youTubeError;
                         }
@@ -165,121 +176,10 @@ public class YouTubeVideo {
         YouTubeVideo.sRequestQueue.start();
     }
 
-    private void processWatchUrlPage(String html) throws ParseError {
 
-        if (html.length() == 0) {
-            throw new ParseError(null, "page is empty");
-        }
 
-//        Log.d(TAG, html);
 
-        String jsonString = extractBootstrapData(html);
-        if (jsonString == null) {
-            jsonString = extractPiggybackData(html);
-        }
 
-        if (jsonString == null) {
-            throw new ParseError(html, "The JSON data could not be found");
-        }
-
-        try {
-            JSONObject jsonData = new JSONObject(jsonString);
-
-            if (!jsonData.has("content")) {
-                mContentAttributes = null;
-
-                if (jsonData.has("errors")) {
-                    String errorMessage = "The content data could not be found.";
-                    JSONArray errors = jsonData.getJSONArray("errors");
-                    if (errors != null && errors.length() > 0) {
-                        errorMessage = errors.getString(0);
-                    }
-                    throw new ParseError(html, errorMessage);
-                }
-
-            } else {
-                mContentAttributes = jsonData.getJSONObject("content");
-
-                JSONObject video = mContentAttributes.getJSONObject("video");
-                if (video != null) {
-                    if (mTitle == null || mTitle.length() == 0) {
-                        mTitle = video.getString("title");
-                        Log.d(TAG, "title = " + mTitle);
-
-                        mTitle = StringEscapeUtils.unescapeJava(mTitle);
-                        Log.d(TAG, "title = " + mTitle);
-
-                    }
-                    if (mDuration <= 0) {
-                        mDuration = video.getLong("length_seconds");
-                        Log.d(TAG, "mDuration = " + mDuration);
-                    }
-                    if (mThumbnailUrl == null || mThumbnailUrl.length() == 0) {
-                        mThumbnailUrl = video.getString("thumbnail_for_watch");
-                        Log.d(TAG, "mThumbnailUrl = " + mThumbnailUrl);
-                    }
-                }
-            }
-        } catch (JSONException e) {
-            Log.e(TAG, e.getMessage());
-            throw new ParseError(jsonString, "The JSON data could not be parsed", e);
-        }
-    }
-
-    private String extractBootstrapData(String html) {
-        String jsonString = null;
-
-        String start = null;
-        String startFull = "var bootstrap_data = \")]}'";
-        String stringShrunk = startFull.replace(" ", "");
-
-        if (html.contains(startFull)) {
-            start = startFull;
-        } else if (html.contains(stringShrunk)) {
-            start = stringShrunk;
-        }
-
-        if (start != null) {
-            int startIndex = html.indexOf(start) + start.length();
-            int endIndex = html.indexOf("\";", startIndex);
-            jsonString = html.substring(startIndex, endIndex);
-            jsonString = unescapeString(jsonString);
-        }
-        return jsonString;
-    }
-
-    private String extractPiggybackData(String html) {
-        String jsonString = null;
-
-        String start = null;
-        String startFull = "ls.setItem('PIGGYBACK_DATA', \")]}'";
-        String stringShrunk = startFull.replace(" ", "");
-
-        if (html.contains(startFull)) {
-            start = startFull;
-        } else if (html.contains(stringShrunk)) {
-            start = stringShrunk;
-        }
-
-        if (start != null) {
-            int startIndex = html.indexOf(start) + start.length();
-            int endIndex = html.indexOf("\");", startIndex);
-            jsonString = html.substring(startIndex, endIndex);
-            jsonString = unescapeString(jsonString);
-        }
-        return jsonString;
-    }
-
-    private String unescapeString(String string) {
-        String result = string.toString();
-//        result = result.replace("\\\"", "\"");
-        result = result.replace("\\\\\"", "'");
-//        result = result.replace("\\\\\\/", "\\/");
-//
-        result = StringEscapeUtils.unescapeEcmaScript(result);
-
-        return result;
-    }
 
     public static void log(String str) {
         if (str.length() > 4000) {

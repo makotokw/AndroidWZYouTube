@@ -5,6 +5,7 @@ WZYouTube for Android
 
 ```bash
 ./gradlew renamePackageReleaseJar
+open YouTube/build/libs
 ```
 
 Copy ``YouTube/build/libs/android-wzyoutube.jar`` to your project.
